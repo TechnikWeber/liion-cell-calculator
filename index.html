@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Li-Ion Zell-Test-Rechner (18650 / 21700)</title>
+<style>
+  :root{
+    --bg:#0a0e14;
+    --panel:#12171f;
+    --panel-2:#161d27;
+    --line:#283341;
+    --txt:#e6edf3;
+    --muted:#869099;
+    --accent:#36c5f0;
+    --accent-dim:#1b3a44;
+    --green:#3fb950;
+    --red:#f85149;
+    --amber:#e3b341;
+    --mono:'JetBrains Mono','Courier New',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--bg);color:var(--txt);font-family:var(--mono);line-height:1.5;
+    padding:24px 16px 60px;
+    background-image:
+      linear-gradient(rgba(54,197,240,.025) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(54,197,240,.025) 1px,transparent 1px);
+    background-size:30px 30px;
+  }
+  .wrap{max-width:760px;margin:0 auto;}
+  header{border-bottom:2px solid var(--accent);padding-bottom:14px;margin-bottom:8px;}
+  h1{font-size:1.3rem;font-weight:700;letter-spacing:-.5px;}
+  h1 .blk{color:var(--accent);}
+  .sub{color:var(--muted);font-size:.8rem;margin-top:4px;}
+  .formula{
+    background:var(--panel-2);border:1px solid var(--line);border-left:3px solid var(--accent);
+    padding:10px 14px;margin:16px 0;font-size:.95rem;text-align:center;
+  }
+  .formula b{color:var(--accent);}
+  .tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
+  .tab{
+    flex:1 1 auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);
+    padding:10px 8px;cursor:pointer;font-family:var(--mono);font-size:.78rem;font-weight:700;
+    transition:.15s;border-radius:5px;white-space:nowrap;
+  }
+  .tab.active{background:var(--panel-2);color:var(--accent);border-color:var(--accent);}
+  .panel{background:var(--panel-2);border:1px solid var(--accent);border-radius:6px;padding:22px;}
+  .panel.hidden{display:none;}
+  .desc{color:var(--muted);font-size:.82rem;margin-bottom:18px;}
+  .field{margin-bottom:16px;}
+  label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:6px;}
+  label .hint{color:var(--accent);}
+  input,select{
+    width:100%;background:var(--bg);border:1px solid var(--line);color:var(--txt);
+    font-family:var(--mono);font-size:1rem;padding:11px 12px;border-radius:5px;
+  }
+  input:focus,select:focus{outline:none;border-color:var(--accent);}
+  .row{display:flex;gap:14px;flex-wrap:wrap;}
+  .row .field{flex:1;min-width:120px;}
+  .result{margin-top:20px;padding:18px;background:var(--bg);border:1px dashed var(--line);border-radius:6px;}
+  .result .big{font-size:2rem;font-weight:700;color:var(--accent);}
+  .result .big small{font-size:1rem;color:var(--muted);font-weight:400;}
+  .result .lbl{font-size:.78rem;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;}
+  .breakdown{margin-top:14px;font-size:.8rem;color:var(--muted);}
+  .breakdown div{padding:3px 0;border-top:1px solid var(--line);}
+  .breakdown .factor{color:var(--txt);}
+  .warn{color:var(--red);} .ok{color:var(--green);} .amber{color:var(--amber);}
+  .note{margin-top:14px;font-size:.74rem;color:var(--muted);border-left:2px solid var(--accent-dim);padding-left:10px;}
+  .note b{color:var(--accent);}
+  footer{margin-top:28px;font-size:.72rem;color:var(--muted);text-align:center;line-height:1.7;}
+  .pill{display:inline-block;background:var(--accent-dim);color:var(--accent);padding:1px 8px;border-radius:10px;font-size:.72rem;}
+  .pill.warn{background:#3a1f1f;color:var(--red);}
+  table{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:6px;}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;}
+  th{color:var(--accent);font-weight:700;}
+  td.num{text-align:right;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="blk">▰</span> Li-Ion Zell-Test-Rechner</h1>
+    <div class="sub">Zylindrische Zellen 18650 / 21700 · NMC / NCA / LFP · Test- &amp; Auswertungshilfen</div>
+  </header>
+
+  <div class="formula">
+    Lebensdauer-Faustformel: L(T) = L<sub>25</sub> · <b>0,5<sup>(T − 25) / 10</sup></b>
+    &nbsp;<span style="color:var(--muted);font-size:.78rem">— Halbierung je <b style="color:var(--accent)">10 °C</b> über 25 °C (Li-Ion)</span>
+  </div>
+
+  <div class="field">
+    <label>Zellchemie <span class="hint">setzt Spannungsfenster &amp; Defaults</span></label>
+    <select id="chem">
+      <option value="nmc" selected>NMC / NCA  (4,2 V voll · 3,6 V nom. · 2,5 V Cutoff)</option>
+      <option value="lfp">LFP  (3,65 V voll · 3,2 V nom. · 2,0 V Cutoff)</option>
+    </select>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-fwd" onclick="switchTab('fwd')">▶ Temp→Zyklen</button>
+    <button class="tab" id="tab-rev" onclick="switchTab('rev')">◀ Rückwärts</button>
+    <button class="tab" id="tab-soc" onclick="switchTab('soc')">▭ SoC-Fenster</button>
+    <button class="tab" id="tab-plan" onclick="switchTab('plan')">⏱ Testdauer</button>
+    <button class="tab" id="tab-chg" onclick="switchTab('chg')">⚡ CC-CV Laden</button>
+    <button class="tab" id="tab-crate" onclick="switchTab('crate')">↻ C-Rate</button>
+    <button class="tab" id="tab-ref" onclick="switchTab('ref')">▤ Grenzwerte</button>
+  </div>
+
+  <!-- VORWÄRTS -->
+  <div class="panel" id="panel-fwd">
+    <div class="desc">Bekannt: Zyklen bei 25 °C. Gesucht: Zyklen bei anderer Temperatur.<br>
+      <span class="pill">Beispiel</span> „1000 Zyklen bei 25 °C — wie viele bei 45 °C?“</div>
+    <div class="row">
+      <div class="field"><label>Zyklen bei 25 °C</label><input type="number" id="fwd-cyc" value="1000" min="0"></div>
+      <div class="field"><label>Ziel-Temperatur (°C)</label><input type="number" id="fwd-t" value="45" step="0.5"></div>
+    </div>
+    <div class="result">
+      <div class="lbl">Erwartete Zyklen</div>
+      <div class="big" id="fwd-out">–</div>
+      <div class="breakdown" id="fwd-break"></div>
+    </div>
+    <div class="note"><b>Li-Ion-Besonderheit:</b> Die Faustformel gilt nur für <b>erhöhte</b> Temperaturen.
+      Bei <b>Kälte</b> (&lt; 10–15 °C) altern Li-Ion-Zellen durch Lithium-Plating <i>schneller</i>, nicht langsamer —
+      kalte Werte sind hier <b>nicht</b> gültig.</div>
+  </div>
+
+  <!-- RÜCKWÄRTS -->
+  <div class="panel hidden" id="panel-rev">
+    <div class="desc">Bekannt: Zyklen bei Testtemperatur. Gesucht: Äquivalent bei 25 °C.<br>
+      <span class="pill">Beispiel</span> „Test bei 45 °C lieferte 350 Zyklen — was bei 25 °C?“</div>
+    <div class="row">
+      <div class="field"><label>Gemessene Zyklen</label><input type="number" id="rev-cyc" value="350" min="0"></div>
+      <div class="field"><label>Test-Temperatur (°C)</label><input type="number" id="rev-t" value="45" step="0.5"></div>
+    </div>
+    <div class="result">
+      <div class="lbl">Äquivalente Zyklen bei 25 °C</div>
+      <div class="big" id="rev-out">–</div>
+      <div class="breakdown" id="rev-break"></div>
+    </div>
+  </div>
+
+  <!-- SOC-FENSTER -->
+  <div class="panel hidden" id="panel-soc">
+    <div class="desc">Bei Li-Ion bestimmt das genutzte <b>SoC-Fenster</b> die Lebensdauer stärker als die reine Entladetiefe.
+      Engere Fenster (z.B. 20–80%) und niedrigere obere Ladegrenze verlängern die Zyklenzahl deutlich.<br>
+      <span class="pill">Beispiel</span> „statt 0–100% nur 10–90% — wie viel mehr Zyklen?“</div>
+    <div class="row">
+      <div class="field"><label>Zyklen-Basis bei 0–100%</label><input type="number" id="soc-cyc" value="500" min="0"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Unteres SoC (%)</label><input type="number" id="soc-lo" value="10" min="0" max="100"></div>
+      <div class="field"><label>Oberes SoC (%)</label><input type="number" id="soc-hi" value="90" min="0" max="100"></div>
+    </div>
+    <div class="result">
+      <div class="lbl">Geschätzte Zyklen im Fenster</div>
+      <div class="big" id="soc-out">–</div>
+      <div class="breakdown" id="soc-break"></div>
+    </div>
+    <div class="note"><b>Grobe Näherung.</b> Modell: schmaleres Fenster reduziert die mechanische Belastung der Elektroden;
+      hoher oberer SoC (&gt; 90%) beschleunigt SEI-Wachstum überproportional. Reale Faktoren sind chemie-abhängig
+      und nichtlinear — die Schätzung ordnet nur die Größenordnung ein.</div>
+  </div>
+
+  <!-- TESTDAUER -->
+  <div class="panel hidden" id="panel-plan">
+    <div class="desc">Testdauer eines Zyklentests und Zeitersparnis durch erhöhte Prüftemperatur.<br>
+      <span class="pill">Beispiel</span> „500 Zyklen, 3 h pro Zyklus, Test bei 45 °C statt 25 °C“</div>
+    <div class="row">
+      <div class="field"><label>Zu fahrende Zyklen</label><input type="number" id="pl-cyc" value="500" min="1"></div>
+      <div class="field"><label>Zeit pro Zyklus (h) <span class="hint">Laden+Entladen+Pause</span></label><input type="number" id="pl-tcyc" value="3" min="0.1" step="0.1"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Auslastung (%)</label><input type="number" id="pl-util" value="85" min="1" max="100"></div>
+      <div class="field"><label>Prüftemperatur (°C)</label><input type="number" id="pl-ttest" value="45" step="0.5"></div>
+      <div class="field"><label>Vergleichstemp. (°C)</label><input type="number" id="pl-tref" value="25" step="0.5"></div>
+    </div>
+    <div class="result">
+      <div class="lbl">Testdauer bei Prüftemperatur</div>
+      <div class="big" id="pl-out">–</div>
+      <div class="breakdown" id="pl-break"></div>
+    </div>
+    <div class="note"><b>Vorsicht bei Li-Ion:</b> Prüftemperaturen über ~45 °C verändern die <i>Alterungs­mechanismen</i>
+      (verstärkte Elektrolytzersetzung) und sind dann nicht mehr repräsentativ für den Realbetrieb. Beschleunigen ja —
+      aber nicht beliebig hoch.</div>
+  </div>
+
+  <!-- CC-CV LADEN -->
+  <div class="panel hidden" id="panel-chg">
+    <div class="desc">CC-CV-Ladung: Ladestrom und grobe Ladezeit. Li-Ion lädt auf feste Schlussspannung
+      (keine Temperaturkompensation wie bei Blei).<br>
+      <span class="pill">Beispiel</span> „3000 mAh Zelle bei 0,5C laden“</div>
+    <div class="row">
+      <div class="field"><label>Zellkapazität (mAh)</label><input type="number" id="chg-cap" value="3000" min="0"></div>
+      <div class="field"><label>Lade-C-Rate <span class="hint">0,5C üblich, 1C max. f. viele Zellen</span></label><input type="number" id="chg-c" value="0.5" min="0.05" step="0.05"></div>
+    </div>
+    <div class="result">
+      <div class="lbl">Ladestrom (CC-Phase)</div>
+      <div class="big" id="chg-out">–</div>
+      <div class="breakdown" id="chg-break"></div>
+    </div>
+    <div class="note"><b>Schlussspannung:</b> <span id="chg-vfull">4,2 V</span> (CV-Phase bis Strom auf ~C/20–C/10 fällt).
+      Höhere Ladeströme &amp; höhere Schlussspannung verkürzen die Lebensdauer. Laden unter 0 °C vermeiden (Plating-Gefahr).</div>
+  </div>
+
+  <!-- C-RATE -->
+  <div class="panel hidden" id="panel-crate">
+    <div class="desc">Umrechnung zwischen C-Rate, Strom und Dauer für Li-Ion-Zellen (in mAh / A).<br>
+      <span class="pill">Beispiel</span> „3000 mAh bei 2C — wie viel Ampere, welche Dauer?“</div>
+    <div class="row">
+      <div class="field"><label>Zellkapazität (mAh)</label><input type="number" id="cr-cap" value="3000" min="0"></div>
+      <div class="field"><label>C-Rate <span class="hint">z.B. 1 = 1C, 0,5 = C/2</span></label><input type="number" id="cr-c" value="2" min="0.01" step="0.05"></div>
+    </div>
+    <div class="result">
+      <div class="lbl">Strom</div>
+      <div class="big" id="cr-out">–</div>
+      <div class="breakdown" id="cr-break"></div>
+    </div>
+    <div class="note">Strom I = C-Rate × Kapazität. Theoretische Dauer = 1 / C-Rate.
+      Nutzbare Kapazität sinkt bei sehr hohen Strömen leicht; Datenblatt-Rating beachten (Dauerstrom vs. Puls).</div>
+  </div>
+
+  <!-- GRENZWERTE -->
+  <div class="panel hidden" id="panel-ref">
+    <div class="desc">Typische Spannungs- und Betriebsgrenzen zylindrischer Li-Ion-Zellen. Werte je Hersteller leicht
+      abweichend — immer das Datenblatt prüfen.</div>
+    <table id="ref-table"></table>
+    <div class="note"><b style="color:var(--red)">Sicherheit:</b> Überladung über die Schlussspannung oder Tiefentladung
+      unter den Cutoff schädigt Zellen irreversibel und kann zu thermischem Durchgehen führen. Lagerung am längsten haltbar
+      bei ~40–50 % SoC (≈ 3,7 V bei NMC).</div>
+  </div>
+
+  <footer>
+    Faustformeln &amp; Näherungswerte — keine exakten Naturkonstanten. Werte gelten für zylindrische Li-Ion-Zellen
+    (NMC/NCA/LFP) und sind chemie- und herstellerabhängig.<br>
+    Für den relativen Vergleich mehrerer Zellen unter identischen Bedingungen ist keine Umrechnung nötig.
+  </footer>
+</div>
+
+<script>
+  const CHEM = {
+    nmc:{name:'NMC / NCA', full:4.2, nom:3.6, cutoff:2.5, store:3.7, chgMax:'0,7–1C'},
+    lfp:{name:'LFP',       full:3.65,nom:3.2, cutoff:2.0, store:3.3, chgMax:'0,5–1C'}
+  };
+  const H = 10; // Halbierungsintervall Li-Ion
+
+  function chem(){ return CHEM[document.getElementById('chem').value]; }
+  function fmt(n){ return !isFinite(n)?'–':Math.round(n).toLocaleString('de-DE'); }
+  function de(n,d){ return n.toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+
+  function calcFwd(){
+    const cyc=parseFloat(document.getElementById('fwd-cyc').value);
+    const t=parseFloat(document.getElementById('fwd-t').value);
+    const out=document.getElementById('fwd-out'),brk=document.getElementById('fwd-break');
+    if([cyc,t].some(isNaN)){out.textContent='–';brk.innerHTML='';return;}
+    const dT=t-25, f=Math.pow(0.5,dT/H), res=cyc*f;
+    out.innerHTML=fmt(res)+' <small>Zyklen</small>';
+    const cold = t<15;
+    brk.innerHTML=
+      `<div>ΔT = ${de(dT,1)} °C → Faktor 0,5^(${de(dT,1)}/10) = <span class="factor ${dT>0?'warn':'ok'}">${de(f,3)}</span></div>`+
+      `<div>${fmt(cyc)} × ${de(f,3)} = <span class="factor">${fmt(res)}</span> Zyklen</div>`+
+      `<div>Bandbreite (±20%): <span class="factor">${fmt(res*0.8)} – ${fmt(res*1.2)}</span></div>`+
+      (cold?`<div class="warn">⚠ Unter ~15 °C ungültig: Kälte beschleunigt Alterung (Plating), die Formel unterschätzt den Schaden.</div>`:'');
+  }
+
+  function calcRev(){
+    const cyc=parseFloat(document.getElementById('rev-cyc').value);
+    const t=parseFloat(document.getElementById('rev-t').value);
+    const out=document.getElementById('rev-out'),brk=document.getElementById('rev-break');
+    if([cyc,t].some(isNaN)){out.textContent='–';brk.innerHTML='';return;}
+    const dT=t-25, f=Math.pow(0.5,dT/H), res=cyc/f;
+    out.innerHTML=fmt(res)+' <small>Zyklen</small>';
+    brk.innerHTML=
+      `<div>ΔT = ${de(dT,1)} °C → Faktor <span class="factor">${de(f,3)}</span></div>`+
+      `<div>${fmt(cyc)} ÷ ${de(f,3)} = <span class="factor ${dT>0?'ok':'warn'}">${fmt(res)}</span> Zyklen</div>`+
+      `<div>Bandbreite (±20%): <span class="factor">${fmt(res*0.8)} – ${fmt(res*1.2)}</span></div>`;
+  }
+
+  function calcSoc(){
+    const cyc=parseFloat(document.getElementById('soc-cyc').value);
+    const lo=parseFloat(document.getElementById('soc-lo').value);
+    const hi=parseFloat(document.getElementById('soc-hi').value);
+    const out=document.getElementById('soc-out'),brk=document.getElementById('soc-break');
+    if([cyc,lo,hi].some(isNaN)||hi<=lo){out.textContent='–';brk.innerHTML='';return;}
+    const width=hi-lo;
+    // Modell: Zyklen ~ (100/Fensterbreite)^0.6  + Bonus für niedrige obere Grenze
+    const fWidth=Math.pow(100/width,0.6);
+    // Strafe/Bonus oberer SoC: oberhalb 90% beschleunigt, Referenz 100
+    const fTop=Math.pow(100/Math.max(hi,1),0.5);
+    const res=cyc*fWidth*fTop;
+    out.innerHTML=fmt(res)+' <small>Zyklen</small>';
+    const cl=f=>f>1.001?'ok':(f<0.999?'warn':'');
+    brk.innerHTML=
+      `<div>Fensterbreite ${width}% → <span class="factor ${cl(fWidth)}">×${de(fWidth,2)}</span></div>`+
+      `<div>obere Grenze ${hi}% → <span class="factor ${cl(fTop)}">×${de(fTop,2)}</span></div>`+
+      `<div>${fmt(cyc)} × ${de(fWidth,2)} × ${de(fTop,2)} = <span class="factor">${fmt(res)}</span></div>`+
+      `<div>Bandbreite (±30%): <span class="factor">${fmt(res*0.7)} – ${fmt(res*1.3)}</span></div>`;
+  }
+
+  function calcPlan(){
+    const cyc=parseFloat(document.getElementById('pl-cyc').value);
+    const tc=parseFloat(document.getElementById('pl-tcyc').value);
+    const util=parseFloat(document.getElementById('pl-util').value);
+    const tt=parseFloat(document.getElementById('pl-ttest').value);
+    const tr=parseFloat(document.getElementById('pl-tref').value);
+    const out=document.getElementById('pl-out'),brk=document.getElementById('pl-break');
+    if([cyc,tc,util,tt,tr].some(isNaN)||util<=0){out.textContent='–';brk.innerHTML='';return;}
+    const totalHrs=cyc*tc/util*100, days=totalHrs/24, months=days/30.4;
+    const accel=Math.pow(0.5,(tr-tt)/H);
+    out.innerHTML= months>=1.5?(de(months,1)+' <small>Monate</small>'):(fmt(days)+' <small>Tage</small>');
+    let html=
+      `<div>Reine Zyklenzeit: <span class="factor">${fmt(cyc*tc)} h</span> (${cyc}×${de(tc,1)}h)</div>`+
+      `<div>mit ${util}% Auslastung: <span class="factor">${fmt(totalHrs)} h ≈ ${fmt(days)} Tage</span></div>`;
+    if(Math.abs(tt-tr)>0.1){
+      html+=`<div class="${tt>tr?'ok':'warn'}">${tt}°C altert ${de(accel,2)}× ${tt>tr?'schneller':'langsamer'} als ${tr}°C</div>`+
+            `<div>→ bei ${tr}°C-Test wären es ca. <span class="factor">${de(months*accel,1)} Monate</span></div>`;
+    }
+    if(tt>45) html+=`<div class="amber">⚠ &gt;45 °C: Alterungsmechanismen verschieben sich, Repräsentativität sinkt.</div>`;
+    brk.innerHTML=html;
+  }
+
+  function calcChg(){
+    const cap=parseFloat(document.getElementById('chg-cap').value);
+    const c=parseFloat(document.getElementById('chg-c').value);
+    const out=document.getElementById('chg-out'),brk=document.getElementById('chg-break');
+    document.getElementById('chg-vfull').textContent=de(chem().full,2).replace('.',',')+' V';
+    if([cap,c].some(isNaN)||c<=0){out.textContent='–';brk.innerHTML='';return;}
+    const I=cap*c/1000; // A
+    const tCC=0.8/c;    // grob: ~80% in CC-Phase
+    const tTotal=1/c+0.5; // CC + CV-Schwanz grob
+    out.innerHTML=de(I,2)+' <small>A</small>';
+    brk.innerHTML=
+      `<div>I = ${fmt(cap)} mAh × ${de(c,2)}C = <span class="factor">${de(I,2)} A</span> (= ${fmt(I*1000)} mA)</div>`+
+      `<div>CC-Phase grob: <span class="factor">~${de(tCC,1)} h</span> bis ${de(chem().full,2).replace('.',',')} V</div>`+
+      `<div>Gesamt inkl. CV-Schwanz: <span class="factor">~${de(tTotal,1)} h</span> (Näherung)</div>`;
+  }
+
+  function calcCrate(){
+    const cap=parseFloat(document.getElementById('cr-cap').value);
+    const c=parseFloat(document.getElementById('cr-c').value);
+    const out=document.getElementById('cr-out'),brk=document.getElementById('cr-break');
+    if([cap,c].some(isNaN)||c<=0){out.textContent='–';brk.innerHTML='';return;}
+    const I=cap*c/1000, dur=1/c;
+    out.innerHTML=de(I,2)+' <small>A</small>';
+    brk.innerHTML=
+      `<div>I = ${de(c,2)}C × ${fmt(cap)} mAh = <span class="factor">${de(I,2)} A</span> (${fmt(I*1000)} mA)</div>`+
+      `<div>Theoretische Dauer: <span class="factor">${de(dur*60,0)} min</span> (= ${de(dur,2)} h)</div>`+
+      `<div>Entnommene Ladung: <span class="factor">${fmt(cap)} mAh</span></div>`;
+  }
+
+  function buildRefTable(){
+    const c=chem();
+    document.getElementById('ref-table').innerHTML=
+      `<tr><th>Parameter</th><th>${c.name}</th></tr>`+
+      `<tr><td>Schlussspannung (voll)</td><td class="num">${de(c.full,2).replace('.',',')} V</td></tr>`+
+      `<tr><td>Nennspannung</td><td class="num">${de(c.nom,2).replace('.',',')} V</td></tr>`+
+      `<tr><td>Entlade-Cutoff (min.)</td><td class="num">${de(c.cutoff,2).replace('.',',')} V</td></tr>`+
+      `<tr><td>Lager-SoC (≈40–50%)</td><td class="num">~${de(c.store,2).replace('.',',')} V</td></tr>`+
+      `<tr><td>Übliche Lade-Rate</td><td class="num">${c.chgMax}</td></tr>`+
+      `<tr><td>Lebensdauer-Halbierung</td><td class="num">je ~10 °C über 25 °C</td></tr>`;
+  }
+
+  function calcAll(){ calcFwd();calcRev();calcSoc();calcPlan();calcChg();calcCrate();buildRefTable(); }
+
+  function switchTab(which){
+    ['fwd','rev','soc','plan','chg','crate','ref'].forEach(k=>{
+      document.getElementById('tab-'+k).classList.toggle('active',which===k);
+      document.getElementById('panel-'+k).classList.toggle('hidden',which!==k);
+    });
+  }
+
+  document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',calcAll));
+  calcAll();
+</script>
+</body>
+</html>
