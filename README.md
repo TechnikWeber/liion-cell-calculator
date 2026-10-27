@@ -1,70 +1,95 @@
-# Li-Ion Zell-Test-Rechner (18650 / 21700)
+# Li-ion cell test calculator (18650 / 21700)
 
-**🔗 Live-Demo:** <https://technikweber.github.io/liion-cell-calculator/>
+<p>
+  <a href="https://technikweber.github.io/liion-cell-calculator/"><img alt="Live demo" src="https://img.shields.io/badge/live%20demo-open-brightgreen"></a>
+  <img alt="Single HTML file, offline" src="https://img.shields.io/badge/single%20HTML%20file-offline-blue">
+  <img alt="UI language: German" src="https://img.shields.io/badge/UI-Deutsch-informational">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green"></a>
+</p>
 
-Ein eigenständiges HTML-Tool zur Planung, Auswertung und Plausibilisierung von Tests an zylindrischen Lithium-Ionen-Zellen (18650, 21700) der gängigen Chemien NMC, NCA und LFP. Eine einzige Datei, keine Installation, läuft offline in jedem modernen Browser.
+A self-contained HTML tool for planning, evaluating and sanity-checking tests on
+cylindrical lithium-ion cells (18650, 21700) of the common chemistries NMC, NCA and LFP.
+One file, nothing to install, runs offline in any modern browser.
 
-## Hintergrund
+👉 **[Open the calculator](https://technikweber.github.io/liion-cell-calculator/)**
 
-Lithium-Ionen-Zellen altern grundlegend anders als Blei-Batterien:
+## Background
 
-- Die Lebensdauer halbiert sich näherungsweise je **10 °C** über 25 °C (Battery University), nicht je 7 °C wie bei Blei.
-- Bei **Kälte** altern Li-Ion-Zellen durch Lithium-Plating *schneller*, nicht langsamer — die Faustformel gilt nur für erhöhte Temperaturen.
-- Statt bloßer Entladetiefe (DoD) bestimmt das genutzte **SoC-Fenster** die Lebensdauer (10–90 % ist deutlich schonender als 0–100 %).
-- Geladen wird nach **CC-CV** auf feste Schlussspannung (4,2 V NMC/NCA, 3,65 V LFP) — *ohne* Temperaturkompensation wie bei Blei.
+Lithium-ion cells age fundamentally differently from lead-acid batteries:
 
-Wer Li-Ion-Zellen testet, kann die Werkzeuge eines Blei-Tools deshalb nicht 1:1 übernehmen. Dieses Tool ist auf die Li-Ion-Realität zugeschnitten.
+- Life roughly halves for every **10 °C** above 25 °C (Battery University), not every 7 °C
+  as with lead-acid.
+- In the **cold**, Li-ion cells age *faster* through lithium plating, not slower — the rule
+  of thumb only applies to elevated temperatures.
+- Instead of plain depth of discharge (DoD), the **SoC window** used determines the life
+  (10–90 % is much gentler than 0–100 %).
+- Charging uses **CC-CV** to a fixed end voltage (4.2 V NMC/NCA, 3.65 V LFP) — *without*
+  temperature compensation as with lead-acid.
 
-## Funktionsumfang
+So whoever tests Li-ion cells cannot take over the tools of a lead-acid calculator one to
+one. This tool is tailored to the Li-ion reality.
 
-Sieben Module, oben die Chemie wählbar (setzt Spannungsfenster und Defaults):
+## What it does
 
-- **▶ Temp→Zyklen** — Zyklen bei 25 °C auf andere Temperatur umrechnen (mit Kältewarnung unter ~15 °C).
-- **◀ Rückwärts** — Testzyklen bei erhöhter Temperatur auf 25-°C-Äquivalent zurückrechnen.
-- **▭ SoC-Fenster** — Effekt eines engeren Ladefensters (Fensterbreite + obere Grenze).
-- **⏱ Testdauer** — Zyklen × Zeit/Zyklus + Auslastung → Testdauer; mit Zeitersparnis durch Prüftemperatur. Warnt ab >45 °C, wo sich Alterungsmechanismen verschieben.
-- **⚡ CC-CV Laden** — Ladestrom und grobe Ladezeit aus Kapazität (mAh) und C-Rate; Schlussspannung je Chemie.
-- **↻ C-Rate** — Umrechnung mAh / C-Rate / Strom / Dauer in Li-Ion-Konvention.
-- **▤ Grenzwerte** — Referenztabelle: Schluss-, Nenn-, Cutoff-Spannung, Lager-SoC, Lade-Rate je Chemie.
+Seven modules; choose the chemistry at the top (it sets the voltage window and defaults):
 
-## Benutzung
+- **▶ Temp → cycles** — convert cycles at 25 °C to another temperature (with a cold warning
+  below ~15 °C).
+- **◀ Backward** — convert test cycles at elevated temperature back to the 25 °C equivalent.
+- **▭ SoC window** — effect of a narrower charge window (window width + upper limit).
+- **⏱ Test duration** — cycles × time per cycle + utilisation → test duration; with the time
+  saved by the test temperature. Warns above 45 °C, where ageing mechanisms shift.
+- **⚡ CC-CV charging** — charge current and rough charge time from capacity (mAh) and
+  C-rate; end voltage per chemistry.
+- **↻ C-rate** — conversion between mAh, C-rate, current and duration in Li-ion convention.
+- **▤ Limits** — reference table: end, nominal and cut-off voltage, storage SoC, charge rate
+  per chemistry.
 
-1. `LiIon_Zell_Test_Rechner.html` herunterladen
-2. Datei im Browser öffnen (Doppelklick reicht)
-3. Oben Chemie wählen, Reiter aufrufen, rechnen
+## How to use it
 
-Alle Eingaben werden live ausgewertet. Jedes Modul zeigt den Rechenweg und eine Bandbreite, damit der Charakter als Näherung sichtbar bleibt.
+Open the [live version](https://technikweber.github.io/liion-cell-calculator/), or download
+`index.html` and open it in a browser (double-click is enough). Choose the chemistry at the
+top, open a tab, calculate.
 
-## Formel-Grundlagen
+All inputs are evaluated live. Every module shows the calculation and a range, so that it
+stays visible that these are approximations. The interface is in German.
 
-| Modul | Quelle / Konstante |
+## Formula sources
+
+| Module | Source / constant |
 |---|---|
-| Temperatur-Faustformel | `0,5^((T−25)/10)` — Battery University, Arrhenius-Vereinfachung für Li-Ion |
-| CC-CV Laden | Standard-Ladeverfahren Li-Ion; Schlussspannung 4,2 V (NMC/NCA) bzw. 3,65 V (LFP) |
-| C-Rate | Strom = C-Rate × Kapazität, Dauer = 1/C-Rate |
-| SoC-Fenster-Modell | Heuristik: Fensterbreite und obere Grenze als getrennte Faktoren — grobe Größenordnung |
-| Grenzwerte | Übliche Datenblattwerte zylindrischer Zellen (je Hersteller leicht abweichend) |
+| Temperature rule of thumb | `0.5^((T−25)/10)` — Battery University, Arrhenius simplification for Li-ion |
+| CC-CV charging | Standard Li-ion charging method; end voltage 4.2 V (NMC/NCA) or 3.65 V (LFP) |
+| C-rate | current = C-rate × capacity, duration = 1/C-rate |
+| SoC window model | Heuristic: window width and upper limit as separate factors — rough order of magnitude |
+| Limits | Typical data sheet values of cylindrical cells (vary slightly by manufacturer) |
 
-## Sicherheitshinweise
+## Safety notes
 
-- **Überladung** über die Schlussspannung oder **Tiefentladung** unter den Cutoff schädigt Zellen irreversibel und kann zu thermischem Durchgehen führen.
-- Laden **unter 0 °C** vermeiden — Lithium-Plating-Gefahr.
-- Lagerung am längsten haltbar bei **~40–50 % SoC** (≈ 3,7 V bei NMC).
-- Beschleunigte Alterung über **~45 °C** ist nicht mehr repräsentativ für den Realbetrieb — Alterungsmechanismen verschieben sich.
+- **Overcharging** beyond the end voltage or **deep discharge** below the cut-off damages
+  cells irreversibly and can lead to thermal runaway.
+- Avoid charging **below 0 °C** — risk of lithium plating.
+- Cells keep best when stored at **~40–50 % SoC** (≈ 3.7 V for NMC).
+- Accelerated ageing above **~45 °C** is no longer representative of real operation —
+  ageing mechanisms shift.
 
-## Einschränkungen
+## Limitations
 
-- Faustformeln und Näherungen — nicht für Sicherheits- oder Zertifizierungsaussagen geeignet.
-- Werte gelten für zylindrische Li-Ion-Zellen (NMC/NCA/LFP) und streuen je Hersteller deutlich.
-- Pouch- und prismatische Zellen werden nicht explizit abgedeckt, die meisten Formeln sind aber übertragbar.
-- Für den relativen Vergleich mehrerer Zellen unter identischen Bedingungen ist keine Umrechnung nötig — das Tool ersetzt keinen Test, es ordnet ein.
+- Rules of thumb and approximations — not suitable for safety or certification statements.
+- Values apply to cylindrical Li-ion cells (NMC/NCA/LFP) and vary considerably by
+  manufacturer.
+- Pouch and prismatic cells are not covered explicitly, but most formulas carry over.
+- For a relative comparison of several cells under identical conditions, no conversion is
+  needed — the tool does not replace a test, it puts results into context.
+- For lead-acid batteries see the sister tool
+  [lead-battery-calculator](https://github.com/TechnikWeber/lead-battery-calculator).
 
-## Technik
+## Technology
 
-- Eine einzige HTML-Datei (~20 KB)
-- Vanilla JavaScript, kein Build, keine Abhängigkeiten
-- Kein Tracking, keine externen Calls — vollständig offline lauffähig
+- One HTML file (~20 KB)
+- Vanilla JavaScript, no build, no dependencies
+- No tracking, no external calls — runs fully offline
 
-## Lizenz
+## License
 
-[MIT](LICENSE). Verwendung auf eigene Verantwortung; das Tool ersetzt keine fachliche Prüfung.
+[MIT](LICENSE). Use at your own risk; the tool does not replace a professional review.
