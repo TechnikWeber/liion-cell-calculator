@@ -13,6 +13,8 @@ One file, nothing to install, runs offline in any modern browser.
 
 👉 **[Open the calculator](https://technikweber.github.io/liion-cell-calculator/)**
 
+![Li-ion cell test calculator: 1000 cycles at 25 °C give about 250 cycles at 45 °C, with the calculation steps](docs/screenshot.png)
+
 ## Background
 
 Lithium-ion cells age fundamentally differently from lead-acid batteries:
